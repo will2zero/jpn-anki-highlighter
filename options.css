@@ -181,6 +181,26 @@ input[type="color"] {
   font-weight: 600;
 }
 
+.connection-secure {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 12px 0 0;
+  font-size: 13px;
+}
+
+.connection-secure input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: #79ae8c;
+}
+
+.connection-test {
+  width: auto;
+  margin: 14px 0 0;
+}
+
 textarea {
   min-height: 120px;
   margin-bottom: 0;

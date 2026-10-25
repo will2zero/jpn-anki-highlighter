@@ -8,6 +8,10 @@
     "http://127.0.0.1:8765/*",
     "http://localhost:8765/*"
   ],
+  "optional_host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
   "background": {
     "service_worker": "background.bundle.js"
   },

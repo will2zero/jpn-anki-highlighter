@@ -77,6 +77,26 @@
         <section class="settings-card">
           <div class="section-heading">
             <div>
+              <p class="eyebrow">ANKI CONFIG</p>
+              <h2>AnkiConnect</h2>
+            </div>
+          </div>
+          <p class="section-description">The highlighter needs to know where your AnkiConnect server is running.</p>
+          <label for="ankiHost">Hostname or IP address</label>
+          <input id="ankiHost" name="ankiHost" type="text" placeholder="localhost" autocomplete="off" required>
+          <label for="ankiPort">Port</label>
+          <input id="ankiPort" name="ankiPort" type="number" min="1" max="65535" step="1" placeholder="8765" required>
+          <label class="connection-secure" for="ankiUseHttps">
+            <input id="ankiUseHttps" name="ankiUseHttps" type="checkbox">
+            Connect using HTTPS
+          </label>
+          <p class="help">Use the address and port configured for AnkiConnect. For IPv6, include brackets, for example [::1]. AnkiConnect must allow this extension's origin in its CORS settings.</p>
+          <button id="testAnkiConnection" class="secondary connection-test" type="button">Test connection</button>
+        </section>
+
+        <section class="settings-card">
+          <div class="section-heading">
+            <div>
               <p class="eyebrow">SITE CONTROLS</p>
               <h2>Excluded sites</h2>
             </div>
@@ -93,9 +113,9 @@
         </div>
       </form>
       <footer>
-        <p>Mature means an Anki review interval of at least 21 days. The highlighter only colors text; it does not add lookups or intercept Yomitan.</p>
+        <p>Only connect to an AnkiConnect server you trust. Mature means an Anki review interval of at least 21 days. The highlighter only colors text; it does not add lookups or intercept Yomitan.</p>
       </footer>
     </main>
-    <script src="options.js"></script>
+    <script type="module" src="options.js"></script>
   </body>
 </html>

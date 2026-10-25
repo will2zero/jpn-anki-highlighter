@@ -5,7 +5,7 @@ A Chromium Manifest V3 extension that highlights Japanese words on webpages acco
 ## Requirements
 
 - Chrome, Edge, Brave, or another Chromium browser with Manifest V3 and the CSS Custom Highlight API.
-- Anki with [AnkiConnect](https://ankiweb.net/shared/info/2055492159) installed and running on its default local port, `8765`.
+- Anki with [AnkiConnect](https://ankiweb.net/shared/info/2055492159) installed and running. The default connection is `http://localhost:8765`.
 - Node.js and npm to build the extension and bundle the offline Japanese tokenizer dictionary.
 
 ## Install for development
@@ -18,7 +18,7 @@ A Chromium Manifest V3 extension that highlights Japanese words on webpages acco
 6. In AnkiConnect's configuration, add the extension origin (`chrome-extension://YOUR_EXTENSION_ID`) to `webCorsOriginList`, then restart Anki. Keep the origin restricted to this extension rather than allowing every origin.
 7. Open the extension popup; it loads decks from Anki automatically. Open **Choose decks** and check the decks to use. The expression-field list is limited to fields with data on those selected decks. Choose the field containing the Japanese expression, then choose **Sync vocabulary**.
 
-The extension requests access only to the local AnkiConnect endpoints `127.0.0.1:8765` and `localhost:8765`. It reads cards and stores the resulting vocabulary in local extension storage. Sync again after reviewing or changing cards. The Kuromoji dictionary is bundled locally and is not downloaded at runtime.
+The Settings page lets you configure the AnkiConnect hostname or IP address, port, and HTTP/HTTPS protocol. Use **Test connection** to check the settings; the browser asks permission to connect to that specific origin. AnkiConnect must also allow the extension's `chrome-extension://...` origin in `webCorsOriginList`. Only connect to a server you trust because AnkiConnect does not provide authentication. The extension reads cards and stores the resulting vocabulary in local extension storage. Sync again after reviewing or changing cards. The Kuromoji dictionary is bundled locally and is not downloaded at runtime.
 
 ## Highlight states
 

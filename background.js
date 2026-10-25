@@ -1,7 +1,9 @@
 import kuromoji from "kuromoji.js/browser";
 import { buildReadingVocabulary, toWordTokens } from "./word-matching.js";
-
-const ANKI_CONNECT_URL = "http://127.0.0.1:8765";
+import {
+  DEFAULT_ANKI_CONNECTION,
+  DEFAULT_HIGHLIGHT_COLORS
+} from "./constants.js";
 const KNOWN_INTERVAL_DAYS = 21;
 const CARD_BATCH_SIZE = 300;
 let tokenizerPromise;
@@ -12,12 +14,8 @@ const defaultState = {
   expressionField: "",
   vocabulary: {},
   vocabularyReadings: {},
-  highlightColors: {
-    unknown: "#a78bfa",
-    mature: "#68be78",
-    learning: "#ffc452",
-    new: "#ff7373"
-  },
+  ankiConnection: DEFAULT_ANKI_CONNECTION,
+  highlightColors: DEFAULT_HIGHLIGHT_COLORS,
   excludedSites: [],
   lastSync: null
 };
@@ -34,6 +32,7 @@ chrome.runtime.onInstalled.addListener(async () => {
     expressionField: stored.expressionField,
     vocabulary: stored.vocabulary,
     vocabularyReadings,
+    ankiConnection: stored.ankiConnection || DEFAULT_ANKI_CONNECTION,
     highlightColors: stored.highlightColors,
     excludedSites: stored.excludedSites,
     lastSync: stored.lastSync
@@ -47,6 +46,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     "anki-decks": getDecks,
     "anki-fields": getFields,
     "anki-sync": syncVocabulary,
+    "anki-test-connection": testAnkiConnection,
     "anki-tokenize": tokenizeTexts
   };
   const handler = handlers[message.type];
@@ -63,16 +63,19 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 });
 
 async function invokeAnki(action, params = {}) {
+  const { ankiConnection = DEFAULT_ANKI_CONNECTION } =
+    await chrome.storage.local.get("ankiConnection");
+  const url = getAnkiConnectUrl(ankiConnection);
   let response;
   try {
-    response = await fetch(ANKI_CONNECT_URL, {
+    response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action, version: 6, params })
     });
   } catch (error) {
     throw new Error(
-      `Could not reach AnkiConnect at ${ANKI_CONNECT_URL}. Make sure Anki is running and AnkiConnect is installed. ${error.message}`
+      `Could not reach AnkiConnect at ${url}. Make sure Anki is running, AnkiConnect is installed, and the configured host is reachable. ${error.message}`
     );
   }
 
@@ -85,6 +88,30 @@ async function invokeAnki(action, params = {}) {
     throw new Error(`AnkiConnect ${action} failed: ${payload.error}`);
   }
   return payload.result;
+}
+
+async function testAnkiConnection() {
+  return invokeAnki("version");
+}
+
+function getAnkiConnectUrl(connection) {
+  const host = typeof connection?.host === "string" ? connection.host : "";
+  const port = Number(connection?.port);
+  const scheme = connection?.useHttps === true ? "https" : "http";
+  if (!host || !Number.isInteger(port) || port < 1 || port > 65535) {
+    throw new Error("Invalid AnkiConnect settings. Check the hostname and port in Settings.");
+  }
+
+  let url;
+  try {
+    url = new URL(`${scheme}://${host}:${port}`);
+  } catch {
+    throw new Error("Invalid AnkiConnect hostname. Check the connection settings.");
+  }
+  if (url.username || url.password || url.pathname !== "/" || url.search || url.hash) {
+    throw new Error("AnkiConnect host must be a hostname or IP address only.");
+  }
+  return url.toString();
 }
 
 async function getDecks() {
