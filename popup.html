@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Anki Japanese Highlighter</title>
+    <link rel="stylesheet" href="vendor/pico.min.css">
+    <link rel="stylesheet" href="popup.css">
+  </head>
+  <body>
+    <main>
+      <header class="app-header">
+        <div class="brand-mark" aria-hidden="true">文</div>
+        <div class="brand-copy">
+          <h1>Anki Highlighter</h1>
+          <p>Read Japanese at your pace</p>
+        </div>
+        <label class="toggle" for="enabled" title="Enable or disable page highlights">
+          <input id="enabled" type="checkbox" role="switch">
+          <span class="visually-hidden">Enable highlighting</span>
+        </label>
+      </header>
+
+      <section class="coverage" aria-live="polite" aria-label="Current page word coverage">
+        <div class="coverage-heading">
+          <div>
+            <p class="eyebrow">THIS PAGE</p>
+            <strong id="coverageValue">--%</strong>
+          </div>
+          <span class="coverage-label">mature vocabulary</span>
+        </div>
+        <progress id="coverageProgress" max="100" value="0" aria-label="Mature word coverage"></progress>
+        <p id="coverageDetail">Checking Japanese word occurrences…</p>
+      </section>
+
+      <section class="panel deck-panel" aria-labelledby="decks-heading">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">ANKI COLLECTION</p>
+            <h2 id="decks-heading">Your decks</h2>
+          </div>
+          <button id="refresh" type="button" class="icon-button secondary" aria-label="Load decks from Anki" title="Load decks from Anki">↻</button>
+        </div>
+
+        <span class="deck-label">Choose decks</span>
+        <div class="deck-picker" id="deckPicker">
+          <button
+            id="deckPickerTrigger"
+            class="deck-picker-trigger"
+            type="button"
+            aria-expanded="false"
+            aria-controls="deckPickerMenu"
+            disabled
+          >
+            <span id="deckPickerSummary">Loading decks from Anki…</span>
+            <span class="deck-picker-chevron" aria-hidden="true"></span>
+          </button>
+          <div class="deck-picker-menu" id="deckPickerMenu" hidden>
+            <div id="decks" class="deck-options" role="group" aria-label="Select Anki decks">
+              <p class="deck-empty">Loading decks from Anki…</p>
+            </div>
+          </div>
+        </div>
+        <p class="hint">Select as many decks as you like.</p>
+
+        <label for="field">Expression field</label>
+        <select id="field" disabled>
+          <option value="">Choose decks first…</option>
+        </select>
+        <button id="sync" type="button">Sync vocabulary</button>
+        <p id="status" role="status" aria-live="polite"></p>
+      </section>
+
+      <footer class="popup-footer">
+        <div class="legend" aria-label="Highlight colors">
+          <span class="unknown">Not in deck</span>
+          <span class="new">New</span>
+          <span class="learning">Learning</span>
+          <span class="mature">Mature</span>
+        </div>
+        <button id="settings" type="button" class="text-button">Appearance &amp; exclusions <span aria-hidden="true">↗</span></button>
+      </footer>
+    </main>
+    <script src="popup.js"></script>
+  </body>
+</html>

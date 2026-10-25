@@ -1,0 +1,17 @@
+{
+  "name": "anki-japanese-highlighter",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@picocss/pico": "^2.1.1",
+    "kuromoji.js": "^0.1.6"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0"
+  }
+}

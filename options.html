@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Anki Japanese Highlighter — Settings</title>
+    <link rel="stylesheet" href="vendor/pico.min.css">
+    <link rel="stylesheet" href="options.css">
+  </head>
+  <body>
+    <main>
+      <header class="settings-header">
+        <div class="brand-mark" aria-hidden="true">文</div>
+        <div>
+          <p class="eyebrow">ANKI JAPANESE HIGHLIGHTER</p>
+          <h1>Make it yours</h1>
+          <p class="intro">Tune your reading colors and choose where the highlighter runs.</p>
+        </div>
+      </header>
+      <form id="settings">
+        <section class="settings-card">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">VOCABULARY KEY</p>
+              <h2>Highlight colors</h2>
+            </div>
+          </div>
+          <p class="section-description">Choose a color and display style for each learning state.</p>
+          <fieldset class="color-list">
+            <div class="color-row">
+              <label class="state-name" for="unknown"><span class="state-dot unknown"></span>Not in deck</label>
+              <div class="color-controls">
+                <input id="unknown" name="unknown" type="color" aria-label="Not in deck highlight color">
+                <select id="style-unknown" name="style-unknown" aria-label="Not in deck display style">
+                  <option value="background">Background</option>
+                  <option value="underline">Underline</option>
+                  <option value="text">Text color</option>
+                </select>
+              </div>
+            </div>
+            <div class="color-row">
+              <label class="state-name" for="new"><span class="state-dot new"></span>New</label>
+              <div class="color-controls">
+                <input id="new" name="new" type="color" aria-label="New highlight color">
+                <select id="style-new" name="style-new" aria-label="New display style">
+                  <option value="background">Background</option>
+                  <option value="underline">Underline</option>
+                  <option value="text">Text color</option>
+                </select>
+              </div>
+            </div>
+            <div class="color-row">
+              <label class="state-name" for="learning"><span class="state-dot learning"></span>Learning</label>
+              <div class="color-controls">
+                <input id="learning" name="learning" type="color" aria-label="Learning highlight color">
+                <select id="style-learning" name="style-learning" aria-label="Learning display style">
+                  <option value="background">Background</option>
+                  <option value="underline">Underline</option>
+                  <option value="text">Text color</option>
+                </select>
+              </div>
+            </div>
+            <div class="color-row">
+              <label class="state-name" for="mature"><span class="state-dot mature"></span>Mature</label>
+              <div class="color-controls">
+                <input id="mature" name="mature" type="color" aria-label="Mature highlight color">
+                <select id="style-mature" name="style-mature" aria-label="Mature display style">
+                  <option value="background">Background</option>
+                  <option value="underline">Underline</option>
+                  <option value="text">Text color</option>
+                </select>
+              </div>
+            </div>
+          </fieldset>
+        </section>
+
+        <section class="settings-card">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">SITE CONTROLS</p>
+              <h2>Excluded sites</h2>
+            </div>
+          </div>
+          <p class="section-description">The highlighter will stay quiet on these websites.</p>
+          <label for="excludedSites">Hostnames</label>
+          <textarea id="excludedSites" rows="5" placeholder="example.com&#10;news.example.jp"></textarea>
+          <p class="help">One hostname per line. Subdomains are included automatically.</p>
+        </section>
+
+        <div class="save-row">
+          <p id="status" role="status" aria-live="polite"></p>
+          <button type="submit">Save preferences <span aria-hidden="true">→</span></button>
+        </div>
+      </form>
+      <footer>
+        <p>Mature means an Anki review interval of at least 21 days. The highlighter only colors text; it does not add lookups or intercept Yomitan.</p>
+      </footer>
+    </main>
+    <script src="options.js"></script>
+  </body>
+</html>

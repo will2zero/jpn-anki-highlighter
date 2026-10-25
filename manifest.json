@@ -1,0 +1,30 @@
+{
+  "manifest_version": 3,
+  "name": "Anki Japanese Highlighter",
+  "version": "0.1.0",
+  "description": "Highlight Japanese words on webpages based on your Anki review progress.",
+  "permissions": ["storage", "activeTab"],
+  "host_permissions": [
+    "http://127.0.0.1:8765/*",
+    "http://localhost:8765/*"
+  ],
+  "background": {
+    "service_worker": "background.bundle.js"
+  },
+  "action": {
+    "default_title": "Anki Japanese Highlighter",
+    "default_popup": "popup.html"
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["content.bundle.js"],
+      "css": ["highlights.css"],
+      "run_at": "document_idle"
+    }
+  ]
+}

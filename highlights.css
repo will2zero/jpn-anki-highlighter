@@ -1,0 +1,23 @@
+::highlight(anki-unknown) {
+  background-color: var(--anki-unknown-background, color-mix(in srgb, #a78bfa 30%, transparent));
+  color: var(--anki-unknown-color, inherit);
+  text-decoration: var(--anki-unknown-decoration, none);
+}
+
+::highlight(anki-learning) {
+  background-color: var(--anki-learning-background, color-mix(in srgb, #ffc452 35%, transparent));
+  color: var(--anki-learning-color, inherit);
+  text-decoration: var(--anki-learning-decoration, none);
+}
+
+::highlight(anki-new) {
+  background-color: var(--anki-new-background, color-mix(in srgb, #ff7373 35%, transparent));
+  color: var(--anki-new-color, inherit);
+  text-decoration: var(--anki-new-decoration, none);
+}
+
+::highlight(anki-mature) {
+  background-color: var(--anki-mature-background, color-mix(in srgb, #68be78 30%, transparent));
+  color: var(--anki-mature-color, inherit);
+  text-decoration: var(--anki-mature-decoration, none);
+}
