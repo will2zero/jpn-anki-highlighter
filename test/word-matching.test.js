@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import kuromoji from "kuromoji.js/promise";
 import {
+  buildReadingVocabulary,
   findWordMatches,
   getMatureWordCoverage,
   mapTextRange,
@@ -13,10 +14,40 @@ const tokenizer = await kuromoji.builder({
   dicPath: "node_modules/kuromoji.js/dict/"
 }).build();
 
-function match(text, vocabulary) {
-  return findWordMatches(text, toWordTokens(tokenizer.tokenize(text)), vocabulary)
+function match(text, vocabulary, vocabularyReadings = {}) {
+  return findWordMatches(
+    text,
+    toWordTokens(tokenizer.tokenize(text)),
+    vocabulary,
+    vocabularyReadings
+  )
     .map(({ start, end, status }) => ({ surface: text.slice(start, end), status }));
 }
+
+test("matches hiragana spellings against kanji Anki expressions by reading", () => {
+  const vocabulary = { 分かる: "mature", 食べる: "learning", 天気: "new" };
+  const readings = buildReadingVocabulary(vocabulary, tokenizer);
+
+  assert.deepEqual(match("わかった。", vocabulary, readings), [
+    { surface: "わかった", status: "mature" }
+  ]);
+  assert.deepEqual(match("たべました。", vocabulary, readings), [
+    { surface: "たべました", status: "learning" }
+  ]);
+  assert.deepEqual(match("てんき。", vocabulary, readings), [
+    { surface: "てんき", status: "new" }
+  ]);
+});
+
+test("reading aliases contribute to mature page coverage", () => {
+  const vocabulary = { 天気: "mature", 猫: "new" };
+  const readings = buildReadingVocabulary(vocabulary, tokenizer);
+  const text = "てんきとねこ。";
+  assert.deepEqual(
+    getMatureWordCoverage(text, toWordTokens(tokenizer.tokenize(text)), vocabulary, readings),
+    { matureWords: 1, totalWords: 2, percentage: 50 }
+  );
+});
 
 test("matches inflected verbs by their Anki dictionary form", () => {
   assert.deepEqual(match("昨日は本を読みました。", { 読む: "known" }), [

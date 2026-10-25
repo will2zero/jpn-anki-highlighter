@@ -1,7 +1,9 @@
 const JAPANESE_CHARACTERS = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u;
+const KANA_WORD = /^[\p{Script=Hiragana}\p{Script=Katakana}ー]+$/u;
 const LEXICAL_PARTS_OF_SPEECH = new Set([
   "名詞", "動詞", "形容詞", "形容動詞", "副詞", "連体詞", "接続詞", "感動詞"
 ]);
+const STATUS_RANK = { new: 0, learning: 1, mature: 2, known: 2 };
 
 export function toWordTokens(tokens) {
   return tokens.map((token) => {
@@ -17,7 +19,21 @@ export function toWordTokens(tokens) {
   });
 }
 
-export function findWordMatches(text, tokens, vocabulary) {
+export function buildReadingVocabulary(vocabulary, tokenizer) {
+  const readings = {};
+  for (const [expression, status] of Object.entries(vocabulary)) {
+    const tokens = tokenizer.tokenize(expression);
+    if (tokens.length !== 1 || !tokens[0].reading || tokens[0].reading === "*") continue;
+    const reading = normalizeKey(toHiragana(tokens[0].reading));
+    if (!reading) continue;
+    if (!readings[reading] || (STATUS_RANK[status] ?? -1) > (STATUS_RANK[readings[reading]] ?? -1)) {
+      readings[reading] = status;
+    }
+  }
+  return readings;
+}
+
+export function findWordMatches(text, tokens, vocabulary, vocabularyReadings = {}) {
   const matches = [];
   const consumed = new Set();
 
@@ -26,7 +42,10 @@ export function findWordMatches(text, tokens, vocabulary) {
     const token = tokens[index];
     const baseForm = token.baseForm === "*" ? token.surfaceForm : token.baseForm;
     const deckStatus = vocabulary[normalizeKey(baseForm)] ||
-      vocabulary[normalizeKey(token.surfaceForm)];
+      vocabulary[normalizeKey(token.surfaceForm)] ||
+      (KANA_WORD.test(baseForm)
+        ? vocabularyReadings[normalizeKey(toHiragana(baseForm))]
+        : null);
     const status = normalizeStatus(deckStatus) ||
       (isUnknownWord(token) ? "unknown" : null);
     if (!status) continue;
@@ -59,8 +78,8 @@ function isUnknownWord(token) {
     JAPANESE_CHARACTERS.test(token.surfaceForm);
 }
 
-export function getMatureWordCoverage(text, tokens, vocabulary) {
-  const matches = findWordMatches(text, tokens, vocabulary);
+export function getMatureWordCoverage(text, tokens, vocabulary, vocabularyReadings = {}) {
+  const matches = findWordMatches(text, tokens, vocabulary, vocabularyReadings);
   const matureWords = matches.filter(({ status }) => status === "mature").length;
   const totalWords = matches.length;
   return {
@@ -103,4 +122,13 @@ export function splitTextForTokenization(text, maxLength, overlap) {
 
 function normalizeKey(value) {
   return value.normalize("NFKC").trim();
+}
+
+function toHiragana(value) {
+  return [...value].map((character) => {
+    const codePoint = character.codePointAt(0);
+    return codePoint >= 0x30a1 && codePoint <= 0x30f6
+      ? String.fromCodePoint(codePoint - 0x60)
+      : character;
+  }).join("");
 }

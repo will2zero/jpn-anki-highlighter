@@ -1,6 +1,7 @@
 (() => {
   // word-matching.js
   var JAPANESE_CHARACTERS = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u;
+  var KANA_WORD = /^[\p{Script=Hiragana}\p{Script=Katakana}ー]+$/u;
   var LEXICAL_PARTS_OF_SPEECH = /* @__PURE__ */ new Set([
     "\u540D\u8A5E",
     "\u52D5\u8A5E",
@@ -11,14 +12,14 @@
     "\u63A5\u7D9A\u8A5E",
     "\u611F\u52D5\u8A5E"
   ]);
-  function findWordMatches(text, tokens, vocabulary2) {
+  function findWordMatches(text, tokens, vocabulary2, vocabularyReadings2 = {}) {
     const matches = [];
     const consumed = /* @__PURE__ */ new Set();
     for (let index = 0; index < tokens.length; index++) {
       if (consumed.has(index)) continue;
       const token = tokens[index];
       const baseForm = token.baseForm === "*" ? token.surfaceForm : token.baseForm;
-      const deckStatus = vocabulary2[normalizeKey(baseForm)] || vocabulary2[normalizeKey(token.surfaceForm)];
+      const deckStatus = vocabulary2[normalizeKey(baseForm)] || vocabulary2[normalizeKey(token.surfaceForm)] || (KANA_WORD.test(baseForm) ? vocabularyReadings2[normalizeKey(toHiragana(baseForm))] : null);
       const status = normalizeStatus(deckStatus) || (isUnknownWord(token) ? "unknown" : null);
       if (!status) continue;
       let end = token.end;
@@ -43,8 +44,8 @@
   function isUnknownWord(token) {
     return LEXICAL_PARTS_OF_SPEECH.has(token.partOfSpeech) && JAPANESE_CHARACTERS.test(token.surfaceForm);
   }
-  function getMatureWordCoverage(text, tokens, vocabulary2) {
-    const matches = findWordMatches(text, tokens, vocabulary2);
+  function getMatureWordCoverage(text, tokens, vocabulary2, vocabularyReadings2 = {}) {
+    const matches = findWordMatches(text, tokens, vocabulary2, vocabularyReadings2);
     const matureWords = matches.filter(({ status }) => status === "mature").length;
     const totalWords = matches.length;
     return {
@@ -84,6 +85,12 @@
   }
   function normalizeKey(value) {
     return value.normalize("NFKC").trim();
+  }
+  function toHiragana(value) {
+    return [...value].map((character) => {
+      const codePoint = character.codePointAt(0);
+      return codePoint >= 12449 && codePoint <= 12534 ? String.fromCodePoint(codePoint - 96) : character;
+    }).join("");
   }
 
   // content.js
@@ -150,6 +157,7 @@
   var TOKEN_CACHE_LIMIT = 1e3;
   var enabled = true;
   var vocabulary = {};
+  var vocabularyReadings = {};
   var highlightColors = {};
   var highlightStyles = {};
   var excludedSites = [];
@@ -173,12 +181,14 @@
     const stored = await chrome.storage.local.get([
       "enabled",
       "vocabulary",
+      "vocabularyReadings",
       "highlightColors",
       "highlightStyles",
       "excludedSites"
     ]);
     enabled = stored.enabled !== false;
     vocabulary = stored.vocabulary || {};
+    vocabularyReadings = stored.vocabularyReadings || {};
     highlightColors = { ...stored.highlightColors };
     highlightStyles = { ...stored.highlightStyles };
     if (!highlightColors.mature && highlightColors.known) {
@@ -191,6 +201,7 @@
       if (area !== "local") return;
       if (changes.enabled) enabled = changes.enabled.newValue !== false;
       if (changes.vocabulary) vocabulary = changes.vocabulary.newValue || {};
+      if (changes.vocabularyReadings) vocabularyReadings = changes.vocabularyReadings.newValue || {};
       if (changes.highlightColors || changes.highlightStyles) {
         if (changes.highlightColors) {
           highlightColors = changes.highlightColors.newValue || {};
@@ -201,7 +212,7 @@
         applyHighlightStyles();
       }
       if (changes.excludedSites) excludedSites = changes.excludedSites.newValue || [];
-      if (changes.enabled || changes.vocabulary || changes.excludedSites) scheduleRefresh();
+      if (changes.enabled || changes.vocabulary || changes.vocabularyReadings || changes.excludedSites) scheduleRefresh();
     });
     const observer = new MutationObserver(scheduleRefresh);
     observer.observe(document.documentElement, { childList: true, subtree: true, characterData: true });
@@ -264,10 +275,10 @@
         if (!tokens || segments.some(
           ({ node, text: originalText }) => !node.isConnected || node.nodeValue !== originalText
         )) continue;
-        const coverage = getMatureWordCoverage(text, tokens, vocabulary);
+        const coverage = getMatureWordCoverage(text, tokens, vocabulary, vocabularyReadings);
         matureWords += coverage.matureWords;
         totalWords += coverage.totalWords;
-        for (const match of findWordMatches(text, tokens, vocabulary)) {
+        for (const match of findWordMatches(text, tokens, vocabulary, vocabularyReadings)) {
           for (const part of mapTextRange(segments, match.start, match.end)) {
             const range = new Range();
             range.setStart(part.node, part.start);

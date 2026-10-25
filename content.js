@@ -24,6 +24,7 @@ const TOKEN_CACHE_LIMIT = 1000;
 
 let enabled = true;
 let vocabulary = {};
+let vocabularyReadings = {};
 let highlightColors = {};
 let highlightStyles = {};
 let excludedSites = [];
@@ -48,10 +49,11 @@ async function initialize() {
   });
 
   const stored = await chrome.storage.local.get([
-    "enabled", "vocabulary", "highlightColors", "highlightStyles", "excludedSites"
+    "enabled", "vocabulary", "vocabularyReadings", "highlightColors", "highlightStyles", "excludedSites"
   ]);
   enabled = stored.enabled !== false;
   vocabulary = stored.vocabulary || {};
+  vocabularyReadings = stored.vocabularyReadings || {};
   highlightColors = { ...stored.highlightColors };
   highlightStyles = { ...stored.highlightStyles };
   if (!highlightColors.mature && highlightColors.known) {
@@ -65,6 +67,7 @@ async function initialize() {
     if (area !== "local") return;
     if (changes.enabled) enabled = changes.enabled.newValue !== false;
     if (changes.vocabulary) vocabulary = changes.vocabulary.newValue || {};
+    if (changes.vocabularyReadings) vocabularyReadings = changes.vocabularyReadings.newValue || {};
     if (changes.highlightColors || changes.highlightStyles) {
       if (changes.highlightColors) {
         highlightColors = changes.highlightColors.newValue || {};
@@ -75,7 +78,7 @@ async function initialize() {
       applyHighlightStyles();
     }
     if (changes.excludedSites) excludedSites = changes.excludedSites.newValue || [];
-    if (changes.enabled || changes.vocabulary || changes.excludedSites) scheduleRefresh();
+    if (changes.enabled || changes.vocabulary || changes.vocabularyReadings || changes.excludedSites) scheduleRefresh();
   });
 
   const observer = new MutationObserver(scheduleRefresh);
@@ -146,10 +149,10 @@ async function refreshHighlights() {
       if (!tokens || segments.some(({ node, text: originalText }) =>
         !node.isConnected || node.nodeValue !== originalText
       )) continue;
-      const coverage = getMatureWordCoverage(text, tokens, vocabulary);
+      const coverage = getMatureWordCoverage(text, tokens, vocabulary, vocabularyReadings);
       matureWords += coverage.matureWords;
       totalWords += coverage.totalWords;
-      for (const match of findWordMatches(text, tokens, vocabulary)) {
+      for (const match of findWordMatches(text, tokens, vocabulary, vocabularyReadings)) {
         for (const part of mapTextRange(segments, match.start, match.end)) {
           const range = new Range();
           range.setStart(part.node, part.start);

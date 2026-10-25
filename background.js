@@ -1,5 +1,5 @@
 import kuromoji from "kuromoji.js/browser";
-import { toWordTokens } from "./word-matching.js";
+import { buildReadingVocabulary, toWordTokens } from "./word-matching.js";
 
 const ANKI_CONNECT_URL = "http://127.0.0.1:8765";
 const KNOWN_INTERVAL_DAYS = 21;
@@ -11,6 +11,7 @@ const defaultState = {
   selectedDecks: [],
   expressionField: "",
   vocabulary: {},
+  vocabularyReadings: {},
   highlightColors: {
     unknown: "#a78bfa",
     mature: "#68be78",
@@ -22,12 +23,17 @@ const defaultState = {
 };
 
 chrome.runtime.onInstalled.addListener(async () => {
-  const stored = await chrome.storage.local.get(defaultState);
+  const stored = await chrome.storage.local.get({ ...defaultState, vocabularyReadings: null });
+  const vocabularyReadings = stored.vocabularyReadings ||
+    (Object.keys(stored.vocabulary).length
+      ? buildReadingVocabulary(stored.vocabulary, await getTokenizer())
+      : {});
   await chrome.storage.local.set({
     enabled: stored.enabled,
     selectedDecks: stored.selectedDecks,
     expressionField: stored.expressionField,
     vocabulary: stored.vocabulary,
+    vocabularyReadings,
     highlightColors: stored.highlightColors,
     excludedSites: stored.excludedSites,
     lastSync: stored.lastSync
@@ -153,6 +159,7 @@ async function syncVocabulary(message) {
 
   const cardIds = await getCardIdsForDecks(selectedDecks);
   const vocabulary = {};
+  const tokenizer = await getTokenizer();
 
   for (let start = 0; start < cardIds.length; start += CARD_BATCH_SIZE) {
     const batch = cardIds.slice(start, start + CARD_BATCH_SIZE);
@@ -173,11 +180,13 @@ async function syncVocabulary(message) {
     }
   }
 
+  const vocabularyReadings = buildReadingVocabulary(vocabulary, tokenizer);
   const lastSync = new Date().toISOString();
   await chrome.storage.local.set({
     selectedDecks,
     expressionField,
     vocabulary,
+    vocabularyReadings,
     lastSync
   });
 

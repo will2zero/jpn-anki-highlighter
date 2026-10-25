@@ -1033,6 +1033,7 @@
   } };
 
   // word-matching.js
+  var STATUS_RANK = { new: 0, learning: 1, mature: 2, known: 2 };
   function toWordTokens(tokens) {
     return tokens.map((token) => {
       const start = token.word_position - 1;
@@ -1046,6 +1047,28 @@
       };
     });
   }
+  function buildReadingVocabulary(vocabulary, tokenizer) {
+    const readings = {};
+    for (const [expression, status] of Object.entries(vocabulary)) {
+      const tokens = tokenizer.tokenize(expression);
+      if (tokens.length !== 1 || !tokens[0].reading || tokens[0].reading === "*") continue;
+      const reading = normalizeKey(toHiragana(tokens[0].reading));
+      if (!reading) continue;
+      if (!readings[reading] || (STATUS_RANK[status] ?? -1) > (STATUS_RANK[readings[reading]] ?? -1)) {
+        readings[reading] = status;
+      }
+    }
+    return readings;
+  }
+  function normalizeKey(value) {
+    return value.normalize("NFKC").trim();
+  }
+  function toHiragana(value) {
+    return [...value].map((character) => {
+      const codePoint = character.codePointAt(0);
+      return codePoint >= 12449 && codePoint <= 12534 ? String.fromCodePoint(codePoint - 96) : character;
+    }).join("");
+  }
 
   // background.js
   var ANKI_CONNECT_URL = "http://127.0.0.1:8765";
@@ -1057,6 +1080,7 @@
     selectedDecks: [],
     expressionField: "",
     vocabulary: {},
+    vocabularyReadings: {},
     highlightColors: {
       unknown: "#a78bfa",
       mature: "#68be78",
@@ -1067,12 +1091,14 @@
     lastSync: null
   };
   chrome.runtime.onInstalled.addListener(async () => {
-    const stored = await chrome.storage.local.get(defaultState);
+    const stored = await chrome.storage.local.get({ ...defaultState, vocabularyReadings: null });
+    const vocabularyReadings = stored.vocabularyReadings || (Object.keys(stored.vocabulary).length ? buildReadingVocabulary(stored.vocabulary, await getTokenizer()) : {});
     await chrome.storage.local.set({
       enabled: stored.enabled,
       selectedDecks: stored.selectedDecks,
       expressionField: stored.expressionField,
       vocabulary: stored.vocabulary,
+      vocabularyReadings,
       highlightColors: stored.highlightColors,
       excludedSites: stored.excludedSites,
       lastSync: stored.lastSync
@@ -1179,6 +1205,7 @@
     }
     const cardIds = await getCardIdsForDecks(selectedDecks);
     const vocabulary = {};
+    const tokenizer = await getTokenizer();
     for (let start = 0; start < cardIds.length; start += CARD_BATCH_SIZE) {
       const batch = cardIds.slice(start, start + CARD_BATCH_SIZE);
       const cards = await invokeAnki("cardsInfo", { cards: batch });
@@ -1188,18 +1215,20 @@
         const expression = normalizeExpression(field.value);
         if (!expression) continue;
         const status = getKnowledgeStatus(card);
-        const key = normalizeKey(expression);
+        const key = normalizeKey2(expression);
         if (!key) continue;
         if (!vocabulary[key] || statusRank(status) > statusRank(vocabulary[key])) {
           vocabulary[key] = status;
         }
       }
     }
+    const vocabularyReadings = buildReadingVocabulary(vocabulary, tokenizer);
     const lastSync = (/* @__PURE__ */ new Date()).toISOString();
     await chrome.storage.local.set({
       selectedDecks,
       expressionField,
       vocabulary,
+      vocabularyReadings,
       lastSync
     });
     return { wordCount: Object.keys(vocabulary).length, lastSync };
@@ -1229,7 +1258,7 @@
   function normalizeExpression(value) {
     return value.replace(/<br\s*\/?>/gi, " ").replace(/<\/(?:div|p|li)>/gi, " ").replace(/<[^>]*>/g, "").replace(/&nbsp;/gi, " ").replace(/&amp;/gi, "&").replace(/&lt;/gi, "<").replace(/&gt;/gi, ">").replace(/&quot;/gi, '"').replace(/&#39;|&apos;/gi, "'").replace(/\s+/g, " ").trim();
   }
-  function normalizeKey(value) {
+  function normalizeKey2(value) {
     return value.normalize("NFKC").trim();
   }
 })();
